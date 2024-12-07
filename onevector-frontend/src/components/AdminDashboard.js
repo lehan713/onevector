@@ -7,9 +7,7 @@ import { faCrown, faUser } from '@fortawesome/free-solid-svg-icons';
 import { tableRowVariant, buttonVariant, modalVariant } from './animations';
 import { motion } from 'framer-motion';
 import { FaCrown } from 'react-icons/fa';
-import oneVectorImage from './images/onevector.png'; // Adjust the path based on your folder structure
-
-
+import oneVectorImage from './images/onevector.png'; // Adjust the path based on your folder structure4
 import MagicLinkHistoryPopup from './MagicLinkHistoryPopup';
 
 
@@ -57,6 +55,20 @@ const [magicLinks, setMagicLinks] = useState([]);
     };
     fetchCandidates();
   }, []);
+
+  const fetchMagicLinks = async () => {
+    try {
+        const response = await axios.get('http://localhost:3000/api/magic-links');
+        setMagicLinks(response.data);
+        setShowHistoryPopup(true);
+    } catch (error) {
+        alert('Failed to fetch magic links');
+        console.error('Fetch error:', error);
+    }
+};
+
+
+
 
 
   const handleDelete = async (id) => {
@@ -193,25 +205,18 @@ const [magicLinks, setMagicLinks] = useState([]);
       )}
 
      {/* Navbar */}
-     <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-10">
+<header className="fixed top-0 left-0 right-0 bg-white shadow-md z-10">
   <div className="flex justify-between items-center p-4">
     {/* Logo and Title on the left */}
     <div className="flex items-center space-x-3">
-    <img src={oneVectorImage} alt="OneVector Logo" className="w-[30px] h-[40px]" />
-    <h1 className="text-2xl font-normal text-gray-800 tracking-wide">
+      <img src={oneVectorImage} alt="OneVector Logo" className="w-[30px] h-[40px]" />
+      <h1 className="text-2xl font-normal text-gray-800 tracking-wide">
         TalentHub
       </h1>
     </div>
 
     {/* Buttons on the right */}
     <div className="flex items-center space-x-6">
-        <FaHistory size={20} />
-        {showHistoryPopup && (
-          <MagicLinkHistoryPopup
-            magicLinks={magicLinks}
-            onClose={() => setShowHistoryPopup(false)}
-          />
-        )}
       <button
         onClick={handleLogout}
         className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center space-x-2 hover:bg-red-400"
@@ -223,26 +228,41 @@ const [magicLinks, setMagicLinks] = useState([]);
   </div>
 </header>
 
+{/* Main Content */}
+<main className="pt-20 px-4 lg:px-16">
+  {/* Search and Actions */}
+  <div className="flex justify-between items-center mb-4 mt-8">
+    <input
+      type="text"
+      placeholder="Search by username"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="border border-black p-2 rounded-lg w-1/2"
+    />
+    <div className="flex items-center space-x-4">
+      <button
+        onClick={() => setShowForm(true)}
+        className="px-4 py-2 bg-gradient-to-r from-[#15ABCD] to-[#094DA2] rounded-lg text-white"
+      >
+        Add User
+      </button>
 
-        
-      {/* Main Content */}
-      <main className="pt-20 px-4 lg:px-16">
-        {/* Search and Actions */}
-        <div className="flex justify-between items-center mb-4 mt-8">
-          <input
-            type="text"
-            placeholder="Search by username"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="border border-black p-2 rounded-lg w-1/2"
-          />
-          <button
-  onClick={() => setShowForm(true)}
-  className="px-4 py-2 bg-gradient-to-r from-[#15ABCD] to-[#094DA2] rounded-lg text-white"
->  Add User
-</button>
-        </div>
+      <FaHistory 
+                size={20} 
+                className="cursor-pointer text-black" 
+                onClick={fetchMagicLinks}  // Trigger fetch on click
+            />
 
+            {/* Render Magic Link History Popup */}
+            {showHistoryPopup && (
+                <MagicLinkHistoryPopup
+                    magicLinks={magicLinks}
+                    onClose={() => setShowHistoryPopup(false)}
+                />
+            )}
+
+    </div>
+  </div>
 
         {/* Add User Form */}
         {showForm && (
