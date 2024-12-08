@@ -14,9 +14,10 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent default form submission behavior
     setError(''); // Reset error on each login attempt
-
+    
     try {
       const response = await axios.post('http://localhost:3000/api/login', { email, password });
+      const user = response.data;
 
       if (response.status === 200) {
         const userData = response.data.user;
@@ -30,7 +31,7 @@ function Login() {
         } else if (userData.role === 'power_user') {
           navigate('/power-user-dashboard');
         } else if (userData.role === 'user') {
-          navigate('/user-dashboard');
+          navigate('/user-details', { state: { candidate: user } }); 
         }
       } else {
         setError('Invalid credentials');
