@@ -174,6 +174,19 @@ app.post('/api/expire-token', async (req, res) => {
   }
 });
 
+
+// API to retrieve all magic links
+app.get('/api/magic-links', async (req, res) => {
+  try {
+    const [magicLinks] = await pool.execute('SELECT * FROM magic_links');
+    res.json(magicLinks);
+  } catch (error) {
+    console.error('Error fetching magic links:', error);
+    res.status(500).json({ error: 'Failed to fetch magic links' });
+  }
+});
+
+
 // API endpoint to submit candidate data
 app.post('/api/submit-candidate', upload.single('resume'), async (req, res) => {
   const {
@@ -277,7 +290,6 @@ app.post('/api/submit-candidate', upload.single('resume'), async (req, res) => {
         }
     });
 
-
 // Endpoint to view the resume
 app.get('/api/resume/:id', async (req, res) => {
   try {
@@ -303,6 +315,27 @@ app.get('/api/resume/:id', async (req, res) => {
 });
 
 
+// Endpoint to download/view the resume
+app.get('/api/resume/:id', async (req, res) => {
+  try {
+      const [rows] = await pool.execute(
+          'SELECT resume_path FROM personaldetails WHERE id = ?',
+          [req.params.id]
+      );
+
+      if (rows.length === 0 || !rows[0].resume_path) {
+          return res.status(404).json({ error: 'Resume not found' });
+      }
+
+      const filePath = rows[0].resume_path;
+      res.sendFile(path.resolve(filePath));
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 // API to retrieve all candidates (for Admin Dashboard)
 
 app.get('/api/candidates', async (req, res) => {
@@ -319,8 +352,6 @@ app.get('/api/candidates', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-
-
 // API endpoint to get all skills
 app.get('/api/skills', async (req, res) => {
   try {
@@ -386,7 +417,7 @@ app.get('/api/personalDetails/:id', async (req, res) => {
   }
 });
 
-
+// Update personal details
 app.put('/api/candidates/:id/personal', upload.single('resume'), async (req, res) => {
   const { id } = req.params;
   const {
@@ -520,6 +551,7 @@ app.put('/api/candidates/:id/qualifications', async (req, res) => {
   }
 });
 
+
 // Update skills
 app.put('/api/candidates/:id/skills', async (req, res) => {
   const { id } = req.params;
@@ -585,6 +617,7 @@ app.put('/api/candidates/:id/certifications', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while updating certifications.' });
   }
 });
+
 
 // API to delete a candidate
 app.delete('/api/candidates/:id', async (req, res) => {
@@ -672,7 +705,7 @@ app.get('/api/user/info/email', async (req, res) => {
   }
 
   try {
-    const [user] = await pool.execute('SELECT username, email, role FROM users WHERE email = ?', [email]);
+    const [user] = await pool.execute('SELECT id, username, email, role FROM users WHERE email = ?', [email]);
 
     if (user.length === 0) {
       return res.status(404).json({ error: 'User not found' });
