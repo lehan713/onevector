@@ -387,6 +387,12 @@ app.get('/api/personalDetails/:id', async (req, res) => {
       return res.status(404).json({ error: 'Personal details not found' });
     }
 
+   // Fetch username
+   const [users] = await pool.execute(
+    'SELECT * FROM users WHERE id = ?',
+    [req.params.id]
+  );
+
     // Fetch qualifications
     const [qualifications] = await pool.execute(
       'SELECT recent_job, preferred_roles, availability, work_permit_status, preferred_role_type, preferred_work_arrangement, compensation FROM qualifications WHERE id = ?',
@@ -408,6 +414,7 @@ app.get('/api/personalDetails/:id', async (req, res) => {
     res.json({
       personalDetails: personalDetails[0],
       qualifications,
+      users:users[0],
       skills: skills.map(skill => skill.skill_name),
       certifications: certifications.map(cert => cert.certification_name),
     });
