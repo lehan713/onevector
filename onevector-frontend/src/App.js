@@ -10,6 +10,7 @@ import './index.css';
 import CandidateDetails from './components/CandidateDetails';
 import Profile from './components/Profile';
 import SuccessPage from './components/SuccessPage';
+import PowerCandidateDetails from './components/PowerCandidateDetails';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           />
           <Route path="/onboard" element={<OnboardingForm />} />
           <Route path="/candidate-details" element={<CandidateDetails />} />
+          <Route path="/power-candidate-details" element={<PowerCandidateDetails />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/success" element={<SuccessPage />} />
           <Route 
