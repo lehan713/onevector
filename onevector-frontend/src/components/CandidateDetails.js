@@ -4,7 +4,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import './CandidateDetails.css';
 import { EyeIcon, DownloadIcon, HomeIcon, ChevronRightIcon } from '@heroicons/react/solid';
-import { FaSignOutAlt, FaTachometerAlt,FaBars, FaTimes } from 'react-icons/fa';
+import { FaSignOutAlt} from 'react-icons/fa';
 import oneVectorImage from './images/onevector.png';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -356,7 +356,6 @@ const recentJob = formData.qualifications.length > 0 ? formData.qualifications[0
         </div>
       </div>
     </header>
-  
 
   {/* Candidate Details Section */}
   <div className="bg-white rounded-lg p-6 mb-0 mt-14 relative px-0 dark:bg-gray-800">
@@ -365,13 +364,13 @@ const recentJob = formData.qualifications.length > 0 ? formData.qualifications[0
       {/* Dashboard Icon */}
       <button
         onClick={() => navigate('/admin-dashboard')}
-        className="flex items-center space-x-2 px-3 py-1 bg-gray-200 text-gray-800 rounded-lg hover:bg-black hover:text-white dark:bg-gray-600 dark:text-gray-100"
+        className="flex items-center space-x-2 px-3 py-1 bg-gray-200 text-gray-800 rounded-lg hover:bg-black hover:text-white dark:bg-gray-600 dark:text-white-100 transition duration-200"
       >
         <HomeIcon className="w-5 h-5" />
         <span className="font-medium">Dashboard</span>
       </button>
 
-      <ChevronRightIcon className="w-5 h-5 text-gray-400 dark:text-gray-300" />
+      <ChevronRightIcon className="w-5 h-5 text-gray-400 dark:text-black-300" />
 
       <span className="flex items-center space-x-2 px-3 py-1 bg-gray-400 text-gray-800 rounded-lg dark:bg-gray-700 dark:text-gray-100">
         Candidate Details
@@ -382,36 +381,43 @@ const recentJob = formData.qualifications.length > 0 ? formData.qualifications[0
     <div className="border-b-0 py-4 flex items-center justify-between flex-wrap space-y-4 sm:space-y-0">
       <div className="flex items-center space-x-3 ml-4 mt-6 w-full md:w-auto md:flex-row flex-col">
         {/* Full Name */}
-        <h1 className="text-3xl font-serif text-black truncate dark:text-gray-100">
+        <h1 className="text-3xl font-serif text-black truncate dark:text-gray-100 text-center sm:text-left">
           {`${formData?.personalDetails?.first_name || ''} ${formData?.personalDetails?.last_name || ''}`.trim() || 'N/A'}
         </h1>
         
         {/* Recent Job */}
-        <p className="text-base text-gray-500 font-medium dark:text-gray-300 md:ml-4 mt-2 md:mt-0">
+        <p className="text-base text-gray-500 font-medium dark:text-gray-300 md:ml-4 mt-2 md:mt-0 text-center sm:text-left">
           <span className="font-semibold dark:text-gray-200">({recentJob || 'N/A'})</span>
         </p>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex space-x-4 mr-5 flex-wrap justify-center mt-4 sm:mt-0 ml-5 w-full md:w-auto">
-        {/* View Resume Button */}
-        <button
-          onClick={handleDownloadResume}
-          className="px-4 py-2 text-white font-medium rounded-lg bg-gradient-to-r from-[#15abcd] to-[#094DA2] hover:opacity-90 transition duration-300 flex items-center"
-        >
-          <EyeIcon className="h-5 w-5 mr-2" />
-          View Resume
-        </button>
+<div className="flex space-x-4 justify-center mt-4 sm:mt-0 ml-5 w-full md:w-auto md:space-y-0">
+  {/* View Resume Button */}
+  <button
+    onClick={handleDownloadResume}
+    className="px-4 py-2 text-white font-medium rounded-lg bg-gradient-to-r from-[#15abcd] to-[#094DA2] hover:opacity-90 transform hover:scale-105 hover:underline transition-all duration-200 flex items-center justify-center space-x-2 md:space-x-2"
+  >
+    <EyeIcon className="h-5 w-5" />
+    {/* Text visible only on medium screens and up */}
+    <span className="hidden md:block">View Resume</span>
+    {/* Text visible only on mobile */}
+    <span className="md:hidden">Resume</span>
+  </button>
 
-        {/* Download Details Button */}
-        <button
-          onClick={handleDownloadDetails}
-          className="px-4 py-2 text-white font-medium rounded-lg bg-gradient-to-r from-[#15abcd] to-[#094DA2] hover:opacity-90 transition duration-300 flex items-center"
-        >
-          <DownloadIcon className="h-5 w-5 mr-2" />
-          Download Details
-        </button>
-      </div>
+  {/* Download Details Button */}
+  <button
+    onClick={handleDownloadDetails}
+    className="px-4 py-2 text-white font-medium rounded-lg bg-gradient-to-r from-[#15abcd] to-[#094DA2] hover:opacity-90 transform hover:scale-105 hover:underline transition-all duration-200 flex items-center justify-center space-x-2 md:space-x-2"
+  >
+    <DownloadIcon className="h-5 w-5" />
+    {/* Text visible only on medium screens and up */}
+    <span className="hidden md:block">Download Details</span>
+    {/* Text visible only on mobile */}
+    <span className="md:hidden">Details</span>
+  </button>
+</div>
+
 
 {/*personal details section */}    
 <div className="w-full px-4 space-y-5">
@@ -777,11 +783,11 @@ const recentJob = formData.qualifications.length > 0 ? formData.qualifications[0
 </div>
 </div>
     
-<div className="flex flex-wrap lg:flex-row flex-col gap-8 min-h-[100px]">
+<div className="flex flex-wrap lg:flex-row flex-col gap-8 min-h-[0px]">
   {/* Skills Section */}
   <div className="flex-1 min-h-[0px]">
     {/* Skills Header */}
-    <div className="max-w-[900px] mx-auto flex justify-between items-center mb-4 -mt-8 relative">
+    <div className="max-w-[900px] mx-auto flex justify-between items-center mb-2 -mt-8 relative">
       <h2 className="text-lg font-serif text-black dark:text-white truncate">Skills</h2>
       <button
         onClick={() => handleEditToggle('skills')}
@@ -792,7 +798,7 @@ const recentJob = formData.qualifications.length > 0 ? formData.qualifications[0
       <div className="absolute bottom-[-9px] left-0 w-full border-b-[2px] border-gray-300 dark:border-gray-600" />
     </div>
 
-    <div className="p-6 rounded-lg flex items-center justify-between min-h-[200px]">
+    <div className="p-6 rounded-lg flex items-center justify-between min-h-[100px]">
       {isEditing.skills ? (
         <form onSubmit={(e) => handleSubmit(e, 'skills')} className="w-full">
           <input
@@ -849,7 +855,7 @@ const recentJob = formData.qualifications.length > 0 ? formData.qualifications[0
   {/* Certifications Section */}
   <div className="flex-1 min-h-[0px]">
     {/* Certifications Header */}
-    <div className="max-w-[900px] mx-auto flex justify-between items-center mb-4 -mt-8 relative">
+    <div className="max-w-[900px] mx-auto flex justify-between items-center mb-2 -mt-8 relative">
       <h2 className="text-lg font-serif text-black dark:text-white truncate">Certifications</h2>
       <button
         onClick={() => handleEditToggle('certifications')}
@@ -860,7 +866,7 @@ const recentJob = formData.qualifications.length > 0 ? formData.qualifications[0
       <div className="absolute bottom-[-9px] left-0 w-full border-b-[2px] border-gray-300 dark:border-gray-600" />
     </div>
 
-    <div className="p-3 rounded-lg flex items-center justify-between min-h-[200px]">
+    <div className="p-3 rounded-lg flex items-center justify-between min-h-[100px]">
       {isEditing.certifications ? (
         <form onSubmit={(e) => handleSubmit(e, 'certifications')} className="w-full">
           <input
