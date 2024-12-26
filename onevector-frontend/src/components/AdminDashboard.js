@@ -41,53 +41,48 @@ const { isDarkMode, toggleTheme } = useTheme();
 
 const handleDownloadDetails = async () => {
   try {
-    const response = await fetch('/api/candidates'); // Update to correct endpoint
+    const response = await axios.get('http://localhost:3000/api/candidates'); // Fetch candidates
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      throw new Error(`Non-JSON response: ${text}`);
-    }
-
-    const candidates = await response.json();
-
-    if (candidates.length === 0) {
+    if (response.data.length === 0) {
       alert('No candidate details available to download.');
       return;
     }
 
-    // Map candidate details to the required structure for the Excel file
-    const data = candidates.map(candidate => ({
-      FirstName: candidate.first_name || 'N/A',
-      LastName: candidate.last_name || 'N/A',
-      Email: candidate.email || 'N/A',
-      Role: candidate.role || 'N/A',
-      Username: candidate.username || 'N/A',
-      Phone: candidate.phone_no || 'N/A',
-      Address: `${candidate.address_line1 || ''}, ${candidate.address_line2 || ''}`,
-      City: candidate.city || 'N/A',
-      State: candidate.state || 'N/A',
-      Country: candidate.country || 'N/A',
-      PostalCode: candidate.postal_code || 'N/A',
-      LinkedIn: candidate.linkedin_url || 'N/A',
-      ResumePath: candidate.resume_path || 'N/A',
-      RecentJob: candidate.recent_job || 'N/A',
-      PreferredRoles: candidate.preferred_roles || 'N/A',
-      Availability: candidate.availability || 'N/A',
-      WorkPermitStatus: candidate.work_permit_status || 'N/A',
-      PreferredRoleType: candidate.preferred_role_type || 'N/A',
-      PreferredWorkArrangement: candidate.preferred_work_arrangement || 'N/A',
-      Compensation: candidate.compensation || 'N/A',
-      Skills: candidate.skills?.join(', ') || 'N/A',
-      Certifications: candidate.certifications?.join(', ') || 'N/A',
+    // Create an array to hold all candidate details
+    const candidatesWithDetails = await Promise.all(response.data.map(async (candidate) => {
+      // Fetch personal details for each candidate
+      const personalDetailsResponse = await axios.get(`http://localhost:3000/api/personalDetails/${candidate.id}`);
+      const personalDetails = personalDetailsResponse.data;
+
+      // Combine candidate and personal details
+      return {
+        FirstName: personalDetails.personalDetails.first_name || 'N/A',
+        LastName: personalDetails.personalDetails.last_name || 'N/A',
+        Email: candidate.email || 'N/A',
+        Role: candidate.role || 'N/A',
+        Username: candidate.username || 'N/A',
+        Phone: personalDetails.personalDetails.phone_no || 'N/A',
+        Address: `${personalDetails.personalDetails.address_line1 || ''}, ${personalDetails.personalDetails.address_line2 || ''}`,
+        City: personalDetails.personalDetails.city || 'N/A',
+        State: personalDetails.personalDetails.state || 'N/A',
+        Country: personalDetails.personalDetails.country || 'N/A',
+        PostalCode: personalDetails.personalDetails.postal_code || 'N/A',
+        LinkedIn: personalDetails.personalDetails.linkedin_url || 'N/A',
+        ResumePath: personalDetails.personalDetails.resume_path || 'N/A',
+        RecentJob: personalDetails.qualifications[0]?.recent_job || 'N/A',
+        PreferredRoles: personalDetails.qualifications[0]?.preferred_roles || 'N/A',
+        Availability: personalDetails.qualifications[0]?.availability || 'N/A',
+        WorkPermitStatus: personalDetails.qualifications[0]?.work_permit_status || 'N/A',
+        PreferredRoleType: personalDetails.qualifications[0]?.preferred_role_type || 'N/A',
+        PreferredWorkArrangement: personalDetails.qualifications[0]?.preferred_work_arrangement || 'N/A',
+        Compensation: personalDetails.qualifications[0]?.compensation || 'N/A',
+        Skills: personalDetails.skills.join(', ') || 'N/A',
+        Certifications: personalDetails.certifications.join(', ') || 'N/A',
+      };
     }));
 
     // Generate an Excel worksheet
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(candidatesWithDetails);
 
     // Create a new workbook and append the worksheet
     const workbook = XLSX.utils.book_new();
