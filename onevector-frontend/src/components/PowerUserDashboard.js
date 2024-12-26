@@ -9,6 +9,9 @@ import { motion } from 'framer-motion';
 import { FaCrown } from 'react-icons/fa';
 import oneVectorImage from './images/onevector.png'; // Adjust the path based on your folder structure4
 import MagicLinkHistoryPopup from './MagicLinkHistoryPopup';
+import * as XLSX from 'xlsx'; 
+import {DownloadIcon,SunIcon, MoonIcon, } from '@heroicons/react/solid';
+import { useTheme } from "../ThemeContext"; // Ensure correct import path
 
 
 function PowerUserDashboard() {
@@ -33,9 +36,7 @@ function PowerUserDashboard() {
 
   const [showHistoryPopup, setShowHistoryPopup] = useState(false);
 const [magicLinks, setMagicLinks] = useState([]);
-
-
-
+const { isDarkMode, toggleTheme } = useTheme();
   useEffect(() => {
     const fetchCandidates = async () => {
       setLoading(true);
@@ -66,11 +67,6 @@ const [magicLinks, setMagicLinks] = useState([]);
         console.error('Fetch error:', error);
     }
 };
-
-
-
-
-
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this candidate and all their associated data?')) {
       try {
@@ -91,8 +87,6 @@ const [magicLinks, setMagicLinks] = useState([]);
       }
     }
   };
-  
-
   const toggleRole = (candidate) => {
     setSelectedCandidate(candidate);
     setIsRoleChangeModalOpen(true);
@@ -151,27 +145,6 @@ const [magicLinks, setMagicLinks] = useState([]);
   const closeHistoryModal = () => {
     setHistoryModalOpen(false);
   };
-/*
-  const confirmRoleChange = async (newRole) => {
-    if (!selectedCandidate) return;
-
-    try {
-      await axios.put(`http://localhost:3000/api/candidates/${selectedCandidate.id}/role`, { role: newRole });
-
-      const updatedCandidates = candidates.map((candidate) =>
-        candidate.id === selectedCandidate.id ? { ...candidate, role: newRole } : candidate
-      );
-      setCandidates(updatedCandidates);
-
-      const action = newRole === 'power_user' ? 'Promoted' : 'Demoted';
-      setSuccessMessageText(`${action} successfully!`);
-      setShowSuccessMessage(true);
-      setTimeout(() => setShowSuccessMessage(false), 3000);
-      setIsRoleChangeModalOpen(false);
-    } catch {
-      alert(`Failed to update role to ${newRole}`);
-    }
-  };*/
 
   const confirmDelete = async () => {
     if (!selectedCandidate) return;
@@ -189,139 +162,138 @@ const [magicLinks, setMagicLinks] = useState([]);
   };
 
   return (
-    <div className="min-h-screen bg-white text-black font-sans">
-      {showMagicLinkPopup && (
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'} font-sans`}>
+    {showMagicLinkPopup && (
+      <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center z-20">
+        <div className={`p-4 rounded-lg shadow-lg w-96 ${isDarkMode ? 'bg-green-700' : 'bg-green-500'} text-white`}>
+          <p className="text-center font-semibold">Magic Link sent successfully!</p>
+        </div>
+      </div>
+    )}
+  
+    {showSuccessMessage && (
+      <div className={`p-4 fixed top-0 left-0 right-0 text-center z-20 ${isDarkMode ? 'bg-green-700' : 'bg-green-500'} text-white`}>
+        {successMessageText}
+      </div>
+    )}
+  
+    <header className={`fixed top-0 left-0 right-0 z-10 shadow-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className="flex justify-between items-center p-4">
+        <div className="flex items-center space-x-3">
+          <img src={oneVectorImage} alt="OneVector Logo" className="w-[30px] h-[40px]" />
+          <h1 className={`text-2xl font-normal tracking-wide ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+            TalentHub
+          </h1>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}
+          >
+            {isDarkMode ? (
+              <SunIcon className="w-4 h-4 md:w-7 md:h-7 text-gray-100" />
+            ) : (
+              <MoonIcon className="w-4 h-4 md:w-7 md:h-7 text-gray-800" />
+            )}
+          </button>
+          <button
+            onClick={handleLogout}
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${isDarkMode ? 'bg-red-600 hover:bg-red-500' : 'bg-red-500 hover:bg-red-400'} text-white`}
+          >
+            <FaSignOutAlt size={14} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+  
+    <main className="pt-20 px-4 lg:px-16">
+    <div className="flex flex-wrap justify-between items-center mb-4 mt-8">
+  {/* Search Input */}
+  <input
+    type="text"
+    placeholder="Search by username"
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className={`border p-2 rounded-lg w-full md:w-1/2 ${isDarkMode ? 'border-gray-600 bg-gray-800 text-gray-100' : 'border-black'} transition-all duration-200`}
+  />
+
+  {/* Buttons and History Icon */}
+  <div className="flex flex-wrap items-center gap-4 mt-4 md:mt-0 w-full md:w-auto">
+    {/* Add User Button */}
+    <button
+      onClick={() => setShowForm(true)}
+      className={`px-6 py-2 text-white font-medium rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-r from-[#094DA2] to-[#15abcd]' : 'bg-gradient-to-r from-[#15ABCD] to-[#094DA2]'} transition-all duration-200 hover:scale-105 hover:underline`}
+    >
+      <span className="mr-2 text-lg font-bold">+</span>
+      Add User
+    </button>
+
+    {/* History Icon */}
+    <FaHistory
+      size={20}
+      className={`cursor-pointer ${isDarkMode ? 'text-gray-100' : 'text-black'} transition-all duration-200 hover:scale-105 hover:underline`}
+      onClick={fetchMagicLinks}
+    />
+    {showHistoryPopup && (
+      <MagicLinkHistoryPopup
+        magicLinks={magicLinks}
+        onClose={() => setShowHistoryPopup(false)}
+      />
+    )}
+  </div>
+</div>
+
+      {showForm && (
         <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center z-20">
-          <div className="bg-green-500 text-white p-4 rounded-lg shadow-lg w-96">
-            <p className="text-center font-semibold">Magic Link sent successfully!</p>
+          <div className={`p-8 rounded-lg shadow-xl w-96 ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-black'}`}>
+            <h3 className="text-2xl font-semibold mb-4">Add a New User</h3>
+            <div className="flex flex-col space-y-4">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`border p-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-100 focus:ring-gray-500' : 'border-gray-300 focus:ring-black'}`}
+              />
+              <button
+                onClick={sendMagicLink}
+                className={`px-6 py-3 font-medium rounded-lg focus:outline-none focus:ring-2 ${isDarkMode ? 'bg-gradient-to-r from-[#094DA2] to-[#15abcd] text-gray-100 focus:ring-[#15abcd]' : 'bg-gradient-to-r from-[#15ABCD] to-[#094DA2] text-white focus:ring-[#094DA2]'} hover:opacity-90`}
+              >
+                Send Magic Link
+              </button>
+              <button
+                onClick={() => setShowForm(false)}
+                className={`px-6 py-3 rounded-lg ${isDarkMode ? 'bg-gray-600 text-gray-100 hover:bg-gray-700' : 'bg-gray-300 text-black hover:bg-gray-400'}`}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
-
-      {showSuccessMessage && (
-        <div className="bg-green-500 text-white p-4 fixed top-0 left-0 right-0 text-center z-20">
-          {successMessageText}
-        </div>
-      )}
-
-     {/* Navbar */}
-<header className="fixed top-0 left-0 right-0 bg-white shadow-md z-10">
-  <div className="flex justify-between items-center p-4">
-    {/* Logo and Title on the left */}
-    <div className="flex items-center space-x-3">
-      <img src={oneVectorImage} alt="OneVector Logo" className="w-[30px] h-[40px]" />
-      <h1 className="text-2xl font-normal text-gray-800 tracking-wide">
-        TalentHub
-      </h1>
-    </div>
-
-    {/* Buttons on the right */}
-    <div className="flex items-center space-x-6">
-      <button
-        onClick={handleLogout}
-        className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center space-x-2 hover:bg-red-400"
-      >
-        <FaSignOutAlt size={14} />
-        <span>Logout</span>
-      </button>
-    </div>
-  </div>
-</header>
-
-{/* Main Content */}
-<main className="pt-20 px-4 lg:px-16">
-  {/* Search and Actions */}
-  <div className="flex justify-between items-center mb-4 mt-8">
-    <input
-      type="text"
-      placeholder="Search by username"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      className="border border-black p-2 rounded-lg w-1/2"
-    />
-    <div className="flex items-center space-x-4">
-      <button
-        onClick={() => setShowForm(true)}
-        className="px-4 py-2 bg-gradient-to-r from-[#15ABCD] to-[#094DA2] rounded-lg text-white"
-      >
-        Add User
-      </button>
-
-      <FaHistory 
-                size={20} 
-                className="cursor-pointer text-black" 
-                onClick={fetchMagicLinks}  // Trigger fetch on click
-            />
-
-            {/* Render Magic Link History Popup */}
-            {showHistoryPopup && (
-                <MagicLinkHistoryPopup
-                    magicLinks={magicLinks}
-                    onClose={() => setShowHistoryPopup(false)}
-                />
-            )}
-
-    </div>
-  </div>
-
-        {/* Add User Form */}
-        {showForm && (
-  <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center z-20">
-    <div className="bg-white p-8 rounded-lg shadow-xl w-96">
-      <h3 className="text-2xl font-semibold text-black mb-4">Add a New User</h3>
-      <div className="flex flex-col space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border border-gray-300 p-3 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black"
-        />
-        <button
-          onClick={sendMagicLink}
-          className="px-6 py-3 text-white font-medium rounded-lg bg-gradient-to-r from-[#15abcd] to-[#094DA2] hover:opacity-90 transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#094DA2]"
-          >
-          Send Magic Link
-        </button>
-        <button
-          onClick={() => setShowForm(false)}  // Close the modal when clicked
-          className="bg-gray-300 text-black px-6 py-3 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-black"
-        >
-          Close
-        </button>
-      </div>
-      
-
-    </div>
-  </div>
-)}
-
-<div className="bg-white shadow-md rounded-lg overflow-hidden mt-8">
+  
+  <div className={`bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden mt-8`}>
   {loading ? (
-    <p>Loading...</p>
+    <p className="text-black dark:text-white">Loading...</p>
   ) : filteredCandidates.length ? (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse border-[3px] border-[#F0F4F8] text-left">
-        <thead className="bg-[#F7FAFC] text-black">
+      <table className="w-full border-collapse border-[3px] border-[#F0F4F8] dark:border-gray-700 text-left">
+        <thead className="bg-[#F7FAFC] dark:bg-gray-700 text-black dark:text-white">
           <tr>
-            <th className="py-4 px-6 border-b-[3px] border-[#E5E9EF]">TITLE</th>
-            <th className="py-4 px-6 border-b-[3px] border-[#E5E9EF]">EMAIL</th>
-            <th className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF]">ROLE</th>
-            <th className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF]">USERNAME</th> {/* New Column Header */}
-            <th className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF]">ACTIONS</th>
+            <th className="py-3 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">TITLE</th>
+            <th className="py-3 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">EMAIL</th>
+            <th className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">ROLE</th>
+            <th className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">USERNAME</th>
+            <th className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">ACTIONS</th>
           </tr>
         </thead>
-        <tbody>
-          {filteredCandidates.map((candidate, index) => (
-            <tr
-              key={candidate.id}
-              className={`${
-                index % 2 === 0 ? "bg-[#FBFCFD]" : "bg-white"
-              }`}
-            >
-              <td className="py-4 px-6 border-b-[3px] border-[#E5E9EF]">
+        <tbody className="bg-white dark:bg-gray-800"> {/* Single color for the entire table in dark mode */}
+          {filteredCandidates.map((candidate) => (
+            <tr key={candidate.id}>
+              <td className="py-3 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
                 <div className="flex items-center">
-                  <span className="text-black font-medium">
+                  <span className="text-black dark:text-white font-medium">
                     {candidate.first_name && candidate.last_name
                       ? `${candidate.first_name} ${candidate.last_name}`
                       : candidate.first_name || candidate.last_name || "N/A"}
@@ -335,36 +307,40 @@ const [magicLinks, setMagicLinks] = useState([]);
                   )}
                 </div>
               </td>
-              <td className="py-4 px-6 border-b-[3px] border-[#E5E9EF]">{candidate.email}</td>
-              <td className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF]">
+              <td className="py-3 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600 text-black dark:text-white">{candidate.email}</td>
+              <td className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600 text-black dark:text-white">
                 {candidate.role === "power_user" ? "Power User" : "User"}
               </td>
-              <td className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF]">
-                {candidate.username} {/* New Column Data */}
+              <td className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
+                <span
+                  className="font-medium"
+                  style={{
+                    backgroundImage: 'linear-gradient(to right, #15abcd, #094DA2)',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent',
+                  }}
+                >
+                  {candidate.username}
+                </span>
               </td>
-              <td className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF]">
+              <td className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
                 <div className="flex justify-center items-center gap-4">
-                { /* <button
-                    onClick={() => toggleRole(candidate)}
-                    className="px-4 py-2 bg-white border border-black text-black rounded-lg hover:bg-gradient-to-r hover:from-[#15ABCD] hover:to-[#094DA2] hover:text-white hover:border-0"
-                  >
-                    {candidate.role === "power_user" ? "Demote" : "Promote"}
-                  </button>*/}
                   <button
-                    onClick={() => {
-                      setSelectedCandidate(candidate);
-                      setIsDeleteModalOpen(true);
-                    }}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
+  onClick={() => {
+    setSelectedCandidate(candidate);
+    setIsDeleteModalOpen(true);
+  }}
+  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transform hover:scale-105 hover:underline transition-all duration-200"
+>
+  Delete
+</button>
                   <button
-                    onClick={() => handleShowDetails(candidate)}
-                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-600"
-                  >
-                    Show Details
-                  </button>
+  onClick={() => handleShowDetails(candidate)}
+  className="px-4 py-2 bg-gray-800 text-white dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-600 dark:hover:bg-gray-600 transform hover:scale-105 hover:underline transition-all duration-200"
+>
+  Details
+</button>
+
                 </div>
               </td>
             </tr>
@@ -373,7 +349,7 @@ const [magicLinks, setMagicLinks] = useState([]);
       </table>
     </div>
   ) : (
-    <p className="p-4 text-center">No candidates found.</p>
+    <p className="p-4 text-center text-black dark:text-white">No candidates found.</p>
   )}
 </div>
 
@@ -465,55 +441,6 @@ const [magicLinks, setMagicLinks] = useState([]);
         </motion.div>
       )}
 
-      {/* Role Change Modal */}
-      {isRoleChangeModalOpen && selectedCandidate && (
-        <motion.div
-          variants={modalVariant}
-          initial="hidden"
-          animate="visible"
-         className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center z-50"
-        >
-          <motion.div
-            variants={modalVariant}
-            className="bg-white p-6 rounded-lg shadow-lg w-96"
-          >
-            <h3 className="text-lg font-semibold text-black">Confirm Role Change</h3>
-            <p className="my-4 text-black">
-              Are you sure you want to {selectedCandidate.role === 'power_user' ? 'demote' : 'promote'}{' '}
-              {selectedCandidate.username}{' '}
-              {selectedCandidate.role === 'power_user' && (
-                <FaCrown className="text-yellow-500 ml-2 inline-block" />
-              )}
-              ?
-            </p>
-            <div className="flex justify-end space-x-4">
-  <motion.button
-    variants={buttonVariant}
-    whileHover="hover"
-    whileTap="tap"
-    onClick={() => setIsRoleChangeModalOpen(false)}
-    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-  >
-    Cancel
-  </motion.button>
-{/*
-  <motion.button
-    variants={buttonVariant}
-    whileHover="hover"
-    whileTap="tap"
-    onClick={() =>
-      confirmRoleChange(
-        selectedCandidate.role === 'power_user' ? 'user' : 'power_user'
-      )
-    }
-    className="px-4 py-2 bg-gradient-to-r from-[#15ABCD] to-[#094DA2] text-white rounded-lg"
-  >
-    Confirm
-  </motion.button>*/}
-</div>
- </motion.div>
-        </motion.div>
-      )}
     </div>
   );
 }
