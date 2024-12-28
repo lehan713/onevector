@@ -234,16 +234,29 @@ const handleDownloadDetails = async () => {
   const confirmDelete = async () => {
     if (!selectedCandidate) return;
 
+  
+
     try {
+      // First delete the qualifications
+      await axios.delete(`http://localhost:3000/api/qualifications/${selectedCandidate.id}`);
+      // Then delete the user skills
+      await axios.delete(`http://localhost:3000/api/user_skills/${selectedCandidate.id}`);
+      // Then delete the user certifications
+      await axios.delete(`http://localhost:3000/api/user_certifications/${selectedCandidate.id}`);
+      // Then delete the personal details
+      await axios.delete(`http://localhost:3000/api/personaldetails/${selectedCandidate.id}`);
+      // Finally delete the user
       await axios.delete(`http://localhost:3000/api/candidates/${selectedCandidate.id}`);
+      
       setCandidates(candidates.filter((candidate) => candidate.id !== selectedCandidate.id));
       setSuccessMessageText('Candidate deleted successfully!');
       setShowSuccessMessage(true);
       setIsDeleteModalOpen(false);
       setTimeout(() => setShowSuccessMessage(false), 3000);
-    } catch {
-      alert('Failed to delete candidate');
-    }
+  } catch (error) {
+      alert('Failed to delete candidate and their associated data');
+      console.error('Delete error:', error);
+  }
   };
 
   return (
@@ -293,51 +306,43 @@ const handleDownloadDetails = async () => {
     </header>
   
     <main className="pt-20 px-4 lg:px-16">
-    <div className="flex flex-wrap justify-between items-center mb-4 mt-8">
-  {/* Search Input */}
-  <input
-    type="text"
-    placeholder="Search by username"
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    className={`border p-2 rounded-lg w-full md:w-1/2 ${isDarkMode ? 'border-gray-600 bg-gray-800 text-gray-100' : 'border-black'} transition-all duration-200`}
-  />
-
-  {/* Buttons and History Icon */}
-  <div className="flex flex-wrap items-center gap-4 mt-4 md:mt-0 w-full md:w-auto">
-    {/* Details Button */}
-    <button
-      onClick={handleDownloadDetails}
-      className={`px-6 py-2.5 text-white font-medium rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-r from-[#094DA2] to-[#15abcd]' : 'bg-gradient-to-r from-[#15ABCD] to-[#094DA2]'} transition-all duration-200 hover:scale-105 hover:underline`}
-    >
-      <DownloadIcon className="h-5 w-5 mr-2" />
-      Details
-    </button>
-
-    {/* Add User Button */}
-    <button
-      onClick={() => setShowForm(true)}
-      className={`px-6 py-2 text-white font-medium rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-r from-[#094DA2] to-[#15abcd]' : 'bg-gradient-to-r from-[#15ABCD] to-[#094DA2]'} transition-all duration-200 hover:scale-105 hover:underline`}
-    >
-      <span className="mr-2 text-lg font-bold">+</span>
-      Add User
-    </button>
-
-    {/* History Icon */}
-    <FaHistory
-      size={20}
-      className={`cursor-pointer ${isDarkMode ? 'text-gray-100' : 'text-black'} transition-all duration-200 hover:scale-105 hover:underline`}
-      onClick={fetchMagicLinks}
-    />
-    {showHistoryPopup && (
-      <MagicLinkHistoryPopup
-        magicLinks={magicLinks}
-        onClose={() => setShowHistoryPopup(false)}
-      />
-    )}
-  </div>
-</div>
-
+      <div className="flex flex-wrap justify-between items-center mb-4 mt-8">
+        <input
+          type="text"
+          placeholder="Search by username"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className={`border p-2 rounded-lg w-full md:w-1/2 ${isDarkMode ? 'border-gray-600 bg-gray-800 text-gray-100' : 'border-black'}`}
+        />
+        <div className="flex items-center space-x-4 mt-4 md:mt-0 w-full md:w-auto md:justify-end">
+          <button
+            onClick={handleDownloadDetails}
+            className={`px-4 py-2.5 text-white font-medium rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-r from-[#094DA2] to-[#15abcd]' : 'bg-gradient-to-r from-[#15ABCD] to-[#094DA2]'} hover:opacity-90`}
+          >
+            <DownloadIcon className="h-5 w-5 mr-2" />
+            Export Details
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className={`px-4 py-2 rounded-lg text-white flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-r from-[#094DA2] to-[#15abcd]' : 'bg-gradient-to-r from-[#15ABCD] to-[#094DA2]'} hover:opacity-90`}
+          >
+            <span className="mr-2 text-lg font-bold">+</span>
+            Add User
+          </button>
+          <FaHistory
+            size={20}
+            className={`cursor-pointer ${isDarkMode ? 'text-gray-100' : 'text-black'}`}
+            onClick={fetchMagicLinks}
+          />
+          {showHistoryPopup && (
+            <MagicLinkHistoryPopup
+              magicLinks={magicLinks}
+              onClose={() => setShowHistoryPopup(false)}
+            />
+          )}
+        </div>
+      </div>
+  
       {showForm && (
         <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center z-20">
           <div className={`p-8 rounded-lg shadow-xl w-96 ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-black'}`}>
@@ -375,17 +380,17 @@ const handleDownloadDetails = async () => {
       <table className="w-full border-collapse border-[3px] border-[#F0F4F8] dark:border-gray-700 text-left">
         <thead className="bg-[#F7FAFC] dark:bg-gray-700 text-black dark:text-white">
           <tr>
-            <th className="py-3 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">TITLE</th>
-            <th className="py-3 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">EMAIL</th>
-            <th className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">ROLE</th>
-            <th className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">USERNAME</th>
-            <th className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">ACTIONS</th>
+            <th className="py-4 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">TITLE</th>
+            <th className="py-4 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">EMAIL</th>
+            <th className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">ROLE</th>
+            <th className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">USERNAME</th>
+            <th className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">ACTIONS</th>
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-gray-800"> {/* Single color for the entire table in dark mode */}
           {filteredCandidates.map((candidate) => (
             <tr key={candidate.id}>
-              <td className="py-3 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
+              <td className="py-4 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
                 <div className="flex items-center">
                   <span className="text-black dark:text-white font-medium">
                     {candidate.first_name && candidate.last_name
@@ -401,11 +406,11 @@ const handleDownloadDetails = async () => {
                   )}
                 </div>
               </td>
-              <td className="py-3 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600 text-black dark:text-white">{candidate.email}</td>
-              <td className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600 text-black dark:text-white">
+              <td className="py-4 px-6 border-b-[3px] border-[#E5E9EF] dark:border-gray-600 text-black dark:text-white">{candidate.email}</td>
+              <td className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600 text-black dark:text-white">
                 {candidate.role === "power_user" ? "Power User" : "User"}
               </td>
-              <td className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
+              <td className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
                 <span
                   className="font-medium"
                   style={{
@@ -417,30 +422,29 @@ const handleDownloadDetails = async () => {
                   {candidate.username}
                 </span>
               </td>
-              <td className="py-3 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
+              <td className="py-4 px-6 text-center border-b-[3px] border-[#E5E9EF] dark:border-gray-600">
                 <div className="flex justify-center items-center gap-4">
                   <button
                     onClick={() => toggleRole(candidate)}
-                    className="px-3 py-2 bg-white dark:bg-gray-700 border border-black dark:border-gray-500 text-black dark:text-white rounded-lg hover:bg-gradient-to-r hover:from-[#15ABCD] hover:to-[#094DA2] hover:text-white hover:border-0"
+                    className="px-4 py-2 bg-white dark:bg-gray-700 border border-black dark:border-gray-500 text-black dark:text-white rounded-lg hover:bg-gradient-to-r hover:from-[#15ABCD] hover:to-[#094DA2] hover:text-white hover:border-0"
                   >
                     {candidate.role === "power_user" ? "Demote" : "Promote"}
                   </button>
                   <button
-  onClick={() => {
-    setSelectedCandidate(candidate);
-    setIsDeleteModalOpen(true);
-  }}
-  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transform hover:scale-105 hover:underline transition-all duration-200"
->
-  Delete
-</button>
+                    onClick={() => {
+                      setSelectedCandidate(candidate);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
                   <button
-  onClick={() => handleShowDetails(candidate)}
-  className="px-4 py-2 bg-gray-800 text-white dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-600 dark:hover:bg-gray-600 transform hover:scale-105 hover:underline transition-all duration-200"
->
-  Details
-</button>
-
+                    onClick={() => handleShowDetails(candidate)}
+                    className="px-4 py-2 bg-gray-800 text-white dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-600 dark:hover:bg-gray-600"
+                  >
+                    Show Details
+                  </button>
                 </div>
               </td>
             </tr>
