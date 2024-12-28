@@ -371,8 +371,7 @@ const OnboardingForm = () => {
 
           </>
         )}
-  
-                
+         
   {step === 2 && (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
     {/* Recent Job */}
@@ -398,7 +397,7 @@ const OnboardingForm = () => {
     </div>
 
     {/* Availability */}
-<div className="w-full px-2 mb-4">
+    <div className="w-full px-2 mb-4">
   <label className="block text-gray-700 text-sm font-bold mb-2">Availability</label>
   <div className="relative">
     <select
@@ -425,19 +424,19 @@ const OnboardingForm = () => {
   </div>
 </div>
 
-{/* Work Permit Status */}
-<div className="w-full px-2 mb-4">
-  <label className="block text-gray-700 text-sm font-bold mb-2">Work Permit Status</label>
-  <input
-    type="text"
-    value={workPermitStatus}
-    onChange={(e) => setWorkPermitStatus(e.target.value)}
-    className="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all ease-in-out duration-200 shadow-md placeholder:text-sm placeholder:text-gray-400"
-  />
-</div>
+    {/* Work Permit Status */}
+    <div className="w-full px-2 mb-4">
+      <label className="block text-gray-700 text-sm font-bold mb-2">Work Permit Status</label>
+      <input
+        type="text"
+        value={workPermitStatus}
+        onChange={(e) => setWorkPermitStatus(e.target.value)}
+        className="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all ease-in-out duration-200 shadow-md placeholder:text-sm placeholder:text-gray-400"
+      />
+    </div>
 
-{/* Preferred Role Type */}
-<div className="w-full px-2 mb-4">
+    {/* Preferred Role Type */}
+    <div className="w-full px-2 mb-4">
   <label className="block text-gray-700 text-sm font-bold mb-2">Preferred Role Type</label>
   <div className="relative">
     <select
@@ -464,8 +463,8 @@ const OnboardingForm = () => {
   </div>
 </div>
 
-{/* Preferred Work Arrangement */}
-<div className="w-full px-2 mb-4">
+    {/* Preferred Work Arrangement */}
+    <div className="w-full px-2 mb-4">
   <label className="block text-gray-700 text-sm font-bold mb-2">Preferred Work Arrangement</label>
   <div className="relative">
     <select
