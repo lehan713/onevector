@@ -8,12 +8,39 @@ const multer = require('multer'); // For file upload
 const fs = require('fs');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs'); 
+const bcrypt = require('bcryptjs');
+const serverless = require('serverless-http');
+
+const AWS = require('aws-sdk');
 
 const app = express();
+//app.use(express.json());
+
+/*
+// Enable CORS (using cors middleware)
+app.use(cors({
+  origin: 'https://main.d2u3zhxt1dfrjs.amplifyapp.com', // Frontend URL
+  methods: ['GET','POST','PUT','DELETE' ,'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
+
+// Handle preflight (OPTIONS) requests
+app.options('*', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://main.d1jp2jnbi5jpx5.amplifyapp.com');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.status(200).send();
+});
+
+*/
+
 app.use(express.json());
 app.use(cors({ origin: 'http://localhost:3001' })); // Allow requests from frontend
 app.use('/uploads', express.static('uploads')); // Serve uploaded files
+
+//app.use('/uploads', express.static('uploads')); // Serve uploaded files
 
 // Database connection pool
 const pool = mysql.createPool({
@@ -25,7 +52,18 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
-
+app.get('/test-connection', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [rows] = await connection.query('SELECT 1 AS result');
+    connection.release();
+    res.status(200).json({ message: 'Connected to RDS successfully', data: rows });
+  } catch (error) {
+    console.error('Database connection error:', error.message);
+    res.status(500).json({ error: 'Failed to connect to RDS', message: error.message });
+  }
+});
+/*
 // Multer setup for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -36,9 +74,45 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + ext);
   },
 });
+*/
+//const upload = multer({ storage });
 
-const upload = multer({ storage });
 
+// AWS S3 Configuration
+const s3 = new AWS.S3({
+  //accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+
+//secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+region: process.env.AWS_REGION,
+});
+// Multer setup for handling file upload before sending to S3
+const storage = multer.memoryStorage();
+const upload = multer({ storage }).single('resume');
+
+// Function to upload file to S3
+const uploadToS3 = async (file) => {
+  if (!file) {
+    throw new Error('No file provided');
+  }
+
+  const fileExtension = path.extname(file.originalname);
+  const fileName = `${uuidv4()}${fileExtension}`;
+
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME, // Ensure this is correctly set
+    Key: fileName,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+
+  try {
+    const data = await s3.upload(params).promise();
+    return data.Location; // S3 URL of the uploaded file
+  } catch (error) {
+    console.error(error);
+    throw new Error('Failed to upload file to S3');
+  }
+};
 // Email transporter configuration
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -49,6 +123,8 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
 });
+
+
 
 // Middleware for JWT authentication
 const authenticateJWT = (req, res, next) => {
@@ -67,8 +143,13 @@ const authenticateJWT = (req, res, next) => {
   });
 };
 
+app.get('/', (req, res) => {
+  res.json({ message: 'Protected route accessed successfully', user: req.user });
+});
+
 // Login endpoint
 app.post('/api/login', async (req, res) => {
+  console.log('Login request received');
   const { email, password } = req.body;
 
   try {
@@ -110,6 +191,7 @@ app.post('/api/login', async (req, res) => {
 
 // Magic Link API
 app.post('/api/send-magic-link', async (req, res) => {
+  
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ error: 'Email is required' });
@@ -131,7 +213,9 @@ app.post('/api/send-magic-link', async (req, res) => {
 
     res.json({ message: 'Magic link sent successfully' });
   } catch (error) {
-    console.error('Error sending magic link:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Stack trace:', error.stack);
     res.status(500).json({ error: 'An error occurred while sending the magic link' });
   }
 });
@@ -188,7 +272,7 @@ app.get('/api/magic-links', async (req, res) => {
 
 
 // API endpoint to submit candidate data
-app.post('/api/submit-candidate', upload.single('resume'), async (req, res) => {
+app.post('/api/submit-candidate', upload, async (req, res) => {
   const {
       first_name,
       last_name,
@@ -224,11 +308,20 @@ app.post('/api/submit-candidate', upload.single('resume'), async (req, res) => {
           [username, email, hashedPassword, 'user']
       );
 
+      // Upload resume to S3 and get the URL
+    let resumeUrl = null;
+    if (req.file) {
+      resumeUrl = await uploadToS3(req.file);
+    }
+
+      
       // Insert personal details
       await pool.execute(
           'INSERT INTO personaldetails (id, first_name, last_name, phone_no, address_line1, address_line2, city, state, country, postal_code, linkedin_url, resume_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-          [userResult.insertId, first_name, last_name, phone_no, address_line1, address_line2, city, state, country, postal_code, linkedin_url, req.file.path]
+          [userResult.insertId, first_name, last_name, phone_no, address_line1, address_line2, city, state, country, postal_code, linkedin_url, resumeUrl]
       );
+
+      
 
               // Insert qualifications
               await pool.execute(
@@ -289,32 +382,41 @@ app.post('/api/submit-candidate', upload.single('resume'), async (req, res) => {
             res.status(500).json({ message: 'An error occurred while submitting candidate data.' });
         }
     });
-
-// Endpoint to view the resume
-app.get('/api/resume/:id', async (req, res) => {
-  try {
-    const [rows] = await pool.execute(
-      'SELECT resume_path FROM personaldetails WHERE id = ?',
-      [req.params.id]
-    );
-
-    if (rows.length === 0 || !rows[0].resume_path) {
-      return res.status(404).json({ error: 'Resume not found' });
-    }
-
-    const filePath = rows[0].resume_path;
-
-    // Set headers to ensure the file is viewed in the browser
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline'); // Forces inline display instead of download
-    res.sendFile(path.resolve(filePath));
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-
+//TO view
+    app.get('/api/resume/:id', async (req, res) => {
+      try {
+        // Query the database for the resume path
+        const [rows] = await pool.execute(
+          'SELECT resume_path FROM personaldetails WHERE id = ?',
+          [req.params.id]
+        );
+    
+        // Check if the resume exists
+        if (rows.length === 0 || !rows[0].resume_path) {
+          return res.status(404).json({ error: 'Resume not found' });
+        }
+    
+        // Get the resume path from the database
+        const resumePath = rows[0].resume_path;
+    
+        // Generate a pre-signed URL for the resume
+        const params = {
+          Bucket: 'onevectortalenthub', // your bucket name
+          Key: resumePath.split('onevectortalenthub.s3.ap-south-1.amazonaws.com/')[1],
+          Expires: 60 * 5 // expires in 5 minutes
+        };
+    
+        // Generate pre-signed URL
+        const url = s3.getSignedUrl('getObject', params);
+    
+        // Redirect the user to the pre-signed URL
+        res.redirect(url);
+      } catch (error) {
+        console.error('Error fetching resume:', error);
+        res.status(500).json({ error: 'Server error' });
+      }
+    });
+    
 // Endpoint to download/view the resume
 app.get('/api/resume/:id', async (req, res) => {
   try {
@@ -387,12 +489,6 @@ app.get('/api/personalDetails/:id', async (req, res) => {
       return res.status(404).json({ error: 'Personal details not found' });
     }
 
-   // Fetch username
-   const [users] = await pool.execute(
-    'SELECT * FROM users WHERE id = ?',
-    [req.params.id]
-  );
-
     // Fetch qualifications
     const [qualifications] = await pool.execute(
       'SELECT recent_job, preferred_roles, availability, work_permit_status, preferred_role_type, preferred_work_arrangement, compensation FROM qualifications WHERE id = ?',
@@ -414,7 +510,6 @@ app.get('/api/personalDetails/:id', async (req, res) => {
     res.json({
       personalDetails: personalDetails[0],
       qualifications,
-      users:users[0],
       skills: skills.map(skill => skill.skill_name),
       certifications: certifications.map(cert => cert.certification_name),
     });
@@ -425,7 +520,7 @@ app.get('/api/personalDetails/:id', async (req, res) => {
 });
 
 // Update personal details
-app.put('/api/candidates/:id/personal', upload.single('resume'), async (req, res) => {
+app.put('/api/candidates/:id/personal', upload, async (req, res) => {
   const { id } = req.params;
   const {
     first_name,
@@ -642,6 +737,8 @@ app.delete('/api/candidates/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete candidate' });
   }
 });
+
+
 // API to delete a candidate's personal details
 app.delete('/api/personaldetails/:id', async (req, res) => {
   const { id } = req.params;
@@ -726,7 +823,7 @@ app.get('/api/user/info/email', async (req, res) => {
 });
 
 // API to update logged-in user's information by email
-app.put('/api/user/info/email', upload.single('resume'), async (req, res) => {
+app.put('/api/user/info/email', upload, async (req, res) => {
   const { email } = req.query;
   const { name, phone, address } = req.body;
   const resumePath = req.file ? req.file.path : null;
@@ -798,7 +895,6 @@ app.put('/api/candidates/:id/role', async (req, res) => {
   }
 });
 
-
 // Serve React build files
 app.use(express.static(path.join(__dirname, '../onevector-frontend/build')));
 
@@ -806,7 +902,8 @@ app.use(express.static(path.join(__dirname, '../onevector-frontend/build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../onevector-frontend/build/index.html'));
 });
-
 // Start the server
+//module.exports.handler = serverless(app);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
