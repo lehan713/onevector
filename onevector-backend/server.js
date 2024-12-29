@@ -443,7 +443,7 @@ app.get('/api/resume/:id', async (req, res) => {
 app.get('/api/candidates', async (req, res) => {
   try {
     const query = `
-      SELECT u.id, pd.first_name, pd.last_name, u.role,u.username,u.email
+      SELECT u.id, pd.first_name, pd.last_name, u.role,u.username,u.email,u.id
       FROM users u
       JOIN personaldetails pd ON u.id = pd.id
     `;
